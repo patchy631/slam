@@ -22,6 +22,10 @@ class Extractor:
         ret = []
         if self.last is not None:
             matches = self.bf.knnMatch(queryDescriptors=des, trainDescriptors=self.last['des'], k=2)
+            # matches is a list of tuples where each tuple contains
+            # ((key_pt, nearest_neighbour), (key_py, second_nearest_neighbour))
+            # where key pt is in the current/query frame and neighbour is in
+            # the last/train frame.
             for m, n in matches:
                 if m.distance < 0.75 * n.distance:
                     kp1 = kps[m.queryIdx].pt
@@ -29,6 +33,10 @@ class Extractor:
                     ret.append((kp1, kp2))
         if len(ret) > 0:
             ret = np.array(ret)
+            # Fundamental matrix would be used to see if the match of a point
+            # is along the epi-line in the last image.
+            # Fundamental matrix reduces the search space for finding the
+            # neighbour in the last/train image.
             model, inliers = ransac((ret[:, 0], ret[:, 1]), FundamentalMatrixTransform, min_samples=8,
                                      residual_threshold=1, max_trials=100)
             ret = ret[inliers]
